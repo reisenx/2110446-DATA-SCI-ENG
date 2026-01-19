@@ -10,7 +10,7 @@ By Worralop Srichainont
 
 | No. | Unit                       |              Link              |
 | :-: | :------------------------- | :----------------------------: |
-|  1  | **Intro to Pandas**        | [`Link`](/01-Intro-to-Pandas/) |
+|  1  | **Introduction to Pandas** | [`Link`](/01-Intro-to-Pandas/) |
 |  2  | **Data Preparation**       |           [`Link`]()           |
 |  3  | **Traditional ML**         |           [`Link`]()           |
 |  4  | **Intro to Deep Learning** |           [`Link`]()           |
