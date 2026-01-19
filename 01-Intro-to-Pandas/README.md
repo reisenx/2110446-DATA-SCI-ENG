@@ -1,4 +1,4 @@
-# Unit 01: Intro to Pandas
+# Unit 01: Introduction to Pandas
 
 ---
 
@@ -12,5 +12,5 @@ COMING SOON
 
 | No. | Problem Code                                                                                                   | Name          |                                    Code                                    |                                               Detailed Solution                                                |
 | :-: | :------------------------------------------------------------------------------------------------------------- | :------------ | :------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------: |
-|  1  | [`01_​pandas_​01_​2025s2`](https://drive.google.com/file/d/1fx9VUSnzryM0rnmC7GGZO4dRSo9P9QY0/view?usp=sharing) | Basic Pandas  | [**Code**](/01-Intro-to-Pandas/Grader/01_pandas_01_2025s2/code/student.py) |                                                       -                                                        |
+|  1  | [`01_​pandas_​01_​2025s2`](https://drive.google.com/file/d/1fx9VUSnzryM0rnmC7GGZO4dRSo9P9QY0/view?usp=sharing) | Basic Pandas  | [**Code**](/01-Intro-to-Pandas/Grader/01_pandas_01_2025s2/code/student.py) | [![Colab](/others/colab-badge.svg)](https://colab.research.google.com/drive/1QK-6xdE4zXjrYswMsm1iIp4oKO_7JPky) |
 |  2  | [`01_​pandas_​02_​2025s2`](https://drive.google.com/file/d/1FxwfyMuAceDsrzAA6-gCReniRxZEBYZ0/view?usp=sharing) | YouTube Stats | [**Code**](/01-Intro-to-Pandas/Grader/01_pandas_02_2025s2/code/student.py) | [![Colab](/others/colab-badge.svg)](https://colab.research.google.com/drive/1BqxBfl6EldnaMtdzh1aAk5mg9Xw1FgWZ) |
