@@ -8,14 +8,14 @@ By Worralop Srichainont
 
 # Course Outline
 
-| No. | Unit                       |              Link              |
-| :-: | :------------------------- | :----------------------------: |
-|  1  | **Intro to Pandas**        | [`Link`](/01-Intro-to-Pandas/) |
-|  2  | **Data Preparation**       |           [`Link`]()           |
-|  3  | **Traditional ML**         |           [`Link`]()           |
-|  4  | **Intro to Deep Learning** |           [`Link`]()           |
-|  5  | **Advanced ML**            |           [`Link`]()           |
-|  6  | **Generative AI**          |           [`Link`]()           |
+| No. | Unit                       |              Link               |
+| :-: | :------------------------- | :-----------------------------: |
+|  1  | **Introduction to Pandas** | [`Link`](/01-Intro-to-Pandas/)  |
+|  2  | **Data Preparation**       | [`Link`](/02-Data-Preparation/) |
+|  3  | **Traditional ML**         |           [`Link`]()            |
+|  4  | **Intro to Deep Learning** |           [`Link`]()            |
+|  5  | **Advanced ML**            |           [`Link`]()            |
+|  6  | **Generative AI**          |           [`Link`]()            |
 
 ---
 
