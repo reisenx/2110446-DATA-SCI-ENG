@@ -1,0 +1,641 @@
+% DOCUMENT CLASS SETUP %
+\documentclass[12pt, a4paper]{article}
+
+% DOCUMENT PACKAGES
+\usepackage[]{fullpage}
+\usepackage{titling}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+
+% OVERWRITE COMMAND %
+\renewcommand\lstlistingname{Code}
+
+% DOCUMENT TITLE SETUP %
+\title {
+	\textbf{2110446 DATA SCIENCE AND DATA ENGINEERING} \\
+    \vspace{1em}
+	\Large{\textbf{Homework 3: Decision Tree}} \\
+    \vspace{0.5em}
+    \large{Computer Engineering, Chulalongkorn Univerity}
+}
+\author{Worralop Srichainont}
+\date{\today}
+\setlength{\droptitle}{15em}
+
+% DEFINE GITHUB DARK THEME COLORS %
+\definecolor{ghback}{HTML}{0d1117}    % Dark background
+\definecolor{ghtext}{HTML}{c9d1d9}    % Light gray text
+\definecolor{ghkeyword}{HTML}{ff7b72} % Pink/Red keywords
+\definecolor{ghstring}{HTML}{a5d6ff}  % Light blue strings
+\definecolor{ghcomment}{HTML}{8b949e} % Gray comments
+\definecolor{ghnumber}{HTML}{6e7681}  % Line number gray
+
+% CODE SNIPPET CONFIGURATIONS %
+\lstset{
+    language=Python,
+    backgroundcolor=\color{ghback},
+    basicstyle=\ttfamily\footnotesize\color{ghtext},
+    keywordstyle=\color{ghkeyword}\bfseries,
+    commentstyle=\color{ghcomment},
+    stringstyle=\color{ghstring},
+    numberstyle=\tiny\color{ghnumber},
+    % Formatting
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=4,
+    % Frames
+    frame=lines,
+    rulecolor=\color{ghcomment}
+}
+
+% DOCUMENT CONTENTS
+\begin{document}
+
+    \maketitle
+    \thispagestyle{empty}
+    \clearpage
+
+    \tableofcontents
+    \thispagestyle{empty}
+    \clearpage
+
+    \pagenumbering{arabic}
+
+    \section{Problem Description}
+        \subsection{Kyphosis}
+            \textbf{Kyphosis} is a condition where your spine curves outward more than it should. This causes your upper back around the thoracic region (the part of your spine between your neck and ribs) to bend forward.
+
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.5\textwidth]{figure_01}
+                \caption{Kyphosis Symptoms}
+            \end{figure}
+        
+        \subsection{Dataset}
+            The dataset has 81 rows and 4 columns which have the following details:
+            \begin{enumerate}
+                \item \textbf{\texttt{Kyphosis}} is the target column.
+                \begin{enumerate}
+                    \item \textbf{\texttt{absent}} means the spine has not deformed.
+                    \item \textbf{\texttt{present}} means the spine has deformed.
+                \end{enumerate}
+
+                \item \textbf{\texttt{Age}} is the age of the patient in months unit.
+                \item \textbf{\texttt{Number}} is the total number of vertebrae (spine bones) that were involved in the surgical procedure.
+                \item \textbf{\texttt{Start}} is the index of the topmost vertebra (spine bone) that was operated on.
+            \end{enumerate}
+
+    \pagebreak
+
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.4\textwidth]{figure_02}
+                \caption{Dataset Example}
+            \end{figure}
+
+            For \textbf{\texttt{Start}} column in the dataset, it treats human vertebrae as a continuous sequence from 1 to 24.
+            \begin{itemize}
+                \item \textbf{Cervical vertebrae (C1-C7)} is numbered as 1 to 7.
+                \item \textbf{Thoracic vertebrae (T1-T12)} is numbered as 8 to 19.
+                \item \textbf{Lumbar vertebrae (L1-L5)} is numbered as 20 to 24.
+            \end{itemize}
+
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.7\textwidth]{figure_03}
+                \caption{Vertebrae Structure}
+            \end{figure}
+
+    \pagebreak
+
+        \subsection{Objective}
+            \underline{\textbf{Models}}
+
+            \begin{enumerate}
+                \item \textbf{Decision Tree Model} is a flowchart-like tree used for making decisions or predictions. It breaks down a complex decision into a series of questions eventually leading to a final answer.
+                \item \textbf{Random Forest Model} is a technique that create multiple decision trees from a different random sample of the original dataset with random features.
+                \begin{enumerate}
+                    \item \textbf{Classification} uses the majority of votes from the forest of decision trees.
+                    \item \textbf{Regression} uses the average value from the forest of decision trees.
+                \end{enumerate}
+            \end{enumerate}
+
+            \noindent \underline{\textbf{Assignment}}
+
+            \vspace{1em}
+
+            Please study the \href{https://colab.research.google.com/github/pvateekul/2110446_DSDE_2025s2/blob/main/code/Week03_ML/1_Decision_Trees_Random_Forests_v3.ipynb}{demo notebook} and create a report and export it as a PDF file, comparing:
+            \begin{itemize}
+                \item Decision Tree model with adjusted parameters.
+                \item Random Forest model with adjusted parameters.
+            \end{itemize}
+
+            \noindent\textbf{Objective}: Achieve the highest possible macro-F1 score with proper interpretation.
+    \pagebreak
+
+    \section{Data Gathering}
+        \subsection{Colab Notebook}
+            To access the colab notebook, please follow this link: \texttt{\url{https://colab.research.google.com/drive/19gwAoeK6NIPp-c9uK-8UBJO1VauI06PL}}
+
+            \subsection{Dependencies}
+            Before we start, please import these libraries.
+
+            \begin{lstlisting}[language=Python, caption=Dependencies, gobble=16]
+                import pandas as pd
+                import matplotlib.pyplot as plt
+                import seaborn as sns
+                from sklearn.model_selection import train_test_split
+                from sklearn.tree import DecisionTreeClassifier, plot_tree
+                from sklearn.ensemble import RandomForestClassifier
+                from sklearn.metrics import ConfusionMatrixDisplay, classification_report
+            \end{lstlisting}
+
+        \subsection{Load Data}
+            Next, we are going to load CSV dataset file by using \texttt{pandas}.
+
+            \begin{lstlisting}[language=Python, caption=Load Dataset, gobble=16]
+                KYPHOSIS_URL = "https://raw.githubusercontent.com/reisenx/2110446-DATA-SCI-ENG/refs/heads/main/03-Traditional-ML/Homework/kyphosis.csv"
+
+                KYPHOSIS_DF = pd.read_csv(KYPHOSIS_URL)
+            \end{lstlisting}
+
+    \pagebreak
+
+    \section{Exploratory Data Analysis}
+
+    \textbf{Exploratory Data Analysis (EDA)} is the data analysis to identifies general patterns in the data.
+
+        \subsection{Class Distribution}
+            \textbf{Class Distribution} shows amount of each target classes in the dataset.
+
+            \begin{lstlisting}[language=Python, caption=Class Distribution, gobble=16]
+                sns.countplot(data=KYPHOSIS_DF, x="Kyphosis", hue="Kyphosis", palette="Set1")
+                plt.title("Class Distribution")
+                plt.show()
+            \end{lstlisting}
+
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.7\textwidth]{figure_04}
+                \caption{Class Distribution}
+            \end{figure}
+
+    \pagebreak
+
+        \subsection{Correlation Heatmap}
+            \textbf{Correlation Heatmap} is the visualization the strength and direction of relationships between features.
+            \begin{itemize}
+                \item \textbf{Correlation Value} is in range $[-1.0, 1.0]$ indicating strength of the correlation.
+                \item \textbf{Positive Correlation}: As one variable increases, the other also increases.
+                \item \textbf{Negative Correlation}: As one variable increases, the other decreases.
+                \item \textbf{No Correlation}: There is no linear relationship between the variables.
+            \end{itemize}
+
+            \begin{lstlisting}[language=Python, caption=Correlation Heatmap, gobble=16]
+                features = KYPHOSIS_DF.drop(columns=["Kyphosis"])
+                sns.heatmap(features.corr(), annot=True, cmap="coolwarm")
+                plt.show()
+            \end{lstlisting}
+
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.7\textwidth]{figure_05}
+                \caption{Correlation Heatmap}
+            \end{figure}
+
+    \pagebreak
+
+        \subsection{Pair Plot}
+            \textbf{Pair plot} is a matrix of graphs that enables the visualization of the relationship between each pair of variables in a dataset.
+            \begin{itemize}
+                \item \textbf{Histogram Plot} is on the diagonal line. It shows the distribution of a single features separated by target classes.
+                \item \textbf{Scatter Plot} shows the relationship of two variables.
+            \end{itemize}
+
+            \begin{lstlisting}[language=Python, caption=Pair Plot, gobble=16]
+                sns.pairplot(data=KYPHOSIS_DF, hue="Kyphosis", palette="Set1")
+                plt.show()
+            \end{lstlisting}
+
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.9\textwidth]{figure_06}
+                \caption{Pair Plot}
+            \end{figure}
+
+    \pagebreak
+
+        \subsection{Interpretation}
+        
+            \begin{enumerate}
+                \item \textbf{Class Imbalance}: The dataset has 64 \texttt{absent} class (79\%), but only 17 \texttt{present} class (21\%).
+
+                \item \textbf{Features Relationship}: According to the correlation heatmap and pair plot
+                \begin{itemize}
+                    \item \texttt{Age} has no linear correlation to any features.
+                    \item Only \texttt{Number} and \texttt{Start} features have notable negative linear correlation.
+                \end{itemize}
+
+                \item \textbf{Overlapping}: The classes overlap significantly in the feature space.
+            \end{enumerate}
+    
+    \pagebreak
+
+    \section{Data Preparation}
+        \subsection{Feature and Target Separation}
+
+            \begin{enumerate}
+                \item \textbf{Features (\texttt{X})} are all columns except the \texttt{Kyphosis} column.
+                \item \textbf{Target (\texttt{y})} is the \texttt{Kyphosis} column.
+            \end{enumerate}
+
+            \begin{lstlisting}[language=Python, caption=Feature and Target Separation, gobble=16]
+                X = KYPHOSIS_DF.drop(columns=["Kyphosis"])
+                y = KYPHOSIS_DF["Kyphosis"]
+            \end{lstlisting}
+
+        \subsection{Train and Test Dataset}
+            \textbf{Stratification} is a dataset separation technique can ensure that both train datasets and test dataset have the same \texttt{absent} and \texttt{present} proportions.
+
+            \vspace{0.5em}
+
+            In this problem, we are going to split the dataset into train dataset and test dataset by ratio $7:3$ using stratification technique.
+            \begin{itemize}
+                \item \textbf{Train dataset} (70\% of the dataset) uses for training the model.
+                \item \textbf{Test dataset} (30\% of the dataset) uses for testing the model.
+            \end{itemize}
+
+            \begin{lstlisting}[language=Python, caption=Train and Test Dataset Separation, gobble=16]
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X, y, test_size=0.3, random_state=30, stratify=y
+                )
+            \end{lstlisting}
+
+    \pagebreak
+
+    \section{Decision Tree}
+        \subsection{Adjusting Parameters}
+            \begin{enumerate}
+                \item Choose \texttt{criterion} to \texttt{gini} instead of \texttt{entropy}:
+                \begin{itemize}
+                    \item Choosing \textbf{Gini Impurity} to decide how to split the data.
+                    \item \textbf{Gini Impurity} often works better on imbalanced data.
+                    \item \textbf{Gini Impurity} tends to isolating the most frequent class first.
+                \end{itemize}
+
+                \item Choose \texttt{max\_depth} to 3:
+                \begin{itemize}
+                    \item Limits the decision tree to growing only 3 levels deep.
+                    \item Prevents over-fitting which occurred when the decision tree has too many level.
+                \end{itemize}
+
+                \item Choose \texttt{max\_samples\_split} to 16:
+                \begin{itemize}
+                    \item Requires 16 samples to split a node.
+                    \item Prevents the decision tree model for making rules based only small clusters.
+                \end{itemize}
+
+                \item Choose \texttt{max\_samples\_leaf} to 8:
+                \begin{itemize}
+                    \item Every leaf node must have at least 8 samples.
+                    \item Prevents the decision tree model for making rules just for a tiny cluster.
+                \end{itemize}
+
+                \item Choose \texttt{ccp\_alpha} to 0.01:
+                \begin{itemize}
+                    \item \textbf{Cost Complexity Pruning} uses for pruning too-complex decision tree.
+                    \item Prevents branching when it is just slightly improve the purity.
+                \end{itemize}
+            \end{enumerate}
+
+            \begin{lstlisting}[language=Python, caption=Decision Tree Parameters, gobble=16]
+                CRITERION = "gini"
+                MAX_DEPTH = 3
+                MIN_SAMPLES_SPLIT = 16
+                MIN_SAMPLES_LEAF = 8
+                CCP_ALPHA = 0.01
+            \end{lstlisting}
+
+    \pagebreak
+
+        \subsection{Decision Tree Model}
+            Initialize and train a decision tree model using adjusted parameters.
+
+            \begin{lstlisting}[language=Python, caption=Decision Tree Parameters, gobble=16]
+                model = DecisionTreeClassifier(
+                    criterion=CRITERION,
+                    max_depth=MAX_DEPTH,
+                    min_samples_split=MIN_SAMPLES_SPLIT,
+                    min_samples_leaf=MIN_SAMPLES_LEAF,
+                    ccp_alpha=CCP_ALPHA,
+                )
+                model.fit(X_train, y_train)
+            \end{lstlisting}
+
+            \noindent To visualize the decision tree, you can use \texttt{plot\_tree()}.
+
+            \begin{lstlisting}[language=Python, caption=Decision Tree Visualization, gobble=16]
+                plt.figure(figsize=(6, 10))
+                plot_tree(
+                    model,
+                    feature_names=X_train.columns,
+                    class_names=y_train.unique().tolist(),
+                    filled=True,
+                    rounded=True,
+                )
+                plt.show()
+            \end{lstlisting}
+
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.4\textwidth]{figure_07}
+                \caption{Decision Tree Visualization}
+            \end{figure}
+
+    \pagebreak
+
+        \subsection{Confusion Matrix}
+            \textbf{Confusion Matrix} is a simple table used to measure how well a classification model is performing. It compares the predictions made by the model with the actual results and shows where the model was right or wrong.
+
+            \vspace{0.5em}
+
+            \noindent Given \texttt{absent} is the \texttt{positive} class, and \texttt{present} is \texttt{negative} class.
+
+            \begin{itemize}
+                \item \textbf{True Positive (TP)} means predicted \texttt{positive}, actual \texttt{positive}.
+                \item \textbf{False Positive (FP)} means predicted \texttt{positive}, actual \texttt{negative}.
+                \item \textbf{True Negative (TN)} means predicted \texttt{negative}, actual \texttt{negative}.
+                \item \textbf{False Negative (FN)} means predicted \texttt{negative}, actual \texttt{positive}.
+            \end{itemize}
+
+            For text visualization use \texttt{confusion\_matrix()}, but for image visualization use \\ \texttt{ConfusionMatrixDisplay.from\_predictions()}.
+
+            \begin{lstlisting}[language=Python, caption=Confusion Matrix of Decision Tree, gobble=16]
+                confusion_matrix = ConfusionMatrixDisplay.from_predictions(
+                    y_test, predictions, cmap=plt.cm.Greens
+                )
+                plt.title("Confusion Matrix")
+                plt.show()
+            \end{lstlisting}
+
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.7\textwidth]{figure_08}
+                \caption{Confusion Matrix of Decision Tree}
+            \end{figure}
+
+    \pagebreak
+
+        \subsection{Classification Report}
+
+            \noindent \textbf{Class Metrics}
+            \begin{itemize}
+                \item \textbf{Precision} is the proportions of true positive (TP) by total positive predictions.
+                \item \textbf{Recall} is the proportions of true positive (TP) by total actual positive.
+                \item \textbf{Support} is the amount of actual data in the class.
+                \item \textbf{F1 Score} is the harmonic mean of \textbf{Precision} and \textbf{Recall}.
+            \end{itemize}
+
+            \noindent \textbf{Overall Metrics}
+            \begin{itemize}
+                \item \textbf{Accuracy} is the proportions of correct predictions by total predictions.
+                \item \textbf{Macro F1 Score} is mean of per-class F1 score.
+                \item \textbf{Weight Average F1 Score} is mean of per-class F1 score weighted by each class's support.
+            \end{itemize}
+
+            \begin{lstlisting}[language=Python, caption=Classification Report of Decision Tree, gobble=16]
+                report = classification_report(y_test, predictions, digits=4)
+                print(report)
+            \end{lstlisting}
+
+            \begin{table}[h]
+                \centering
+                \begin{tabular}{|c|c|c|c|c|}
+                    \hline
+                    \rule{0pt}{2.5ex}
+                    \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1 Score} & \textbf{Support} \\
+                    \hline \hline
+                    \textbf{\texttt{absent}} & 0.9474 & 0.9000 & 0.9231 & 20 \\
+                    \textbf{\texttt{present}} & 0.6667 & 0.8000 & 0.7273 & 5 \\
+                    \hline
+                \end{tabular}
+                \caption{Class Metrics}
+            \end{table}
+
+            \begin{table}[h]
+                \centering
+                \begin{tabular}{|c|c|c|}
+                    \hline
+                    \rule{0pt}{2.5ex}
+                    \textbf{Accuracy} & \textbf{Macro F1 Score} & \textbf{Weighted F1 Score} \\
+                    \hline \hline
+                    0.8800 & 0.8252 & 0.8839 \\
+                    \hline
+                \end{tabular}
+                \caption{Overall Metrics}
+            \end{table}
+
+            \noindent \textbf{Result}: This decision tree model got \textbf{0.8252 F1 Macro Score}.
+
+    \pagebreak
+
+    \section{Random Forest}
+        \subsection{Adjusting Parameters}
+            \begin{enumerate}
+                \item Choose \texttt{n\_estimators} to 100:
+                \begin{itemize}
+                    \item Create 100 different decision tree to vote a result.
+                \end{itemize}
+
+                \item Choose \texttt{criterion} to \texttt{gini} instead of \texttt{entropy}:
+                \begin{itemize}
+                    \item Choosing \textbf{Gini Impurity} to decide how to split the data.
+                    \item \textbf{Gini Impurity} often works better on imbalanced data.
+                    \item \textbf{Gini Impurity} tends to isolating the most frequent class first.
+                \end{itemize}
+
+                \item Choose \texttt{max\_depth} to 3:
+                \begin{itemize}
+                    \item Limits the decision tree to growing only 3 levels deep.
+                    \item Prevents over-fitting which occurred when the decision tree has too many level.
+                \end{itemize}
+
+                \item Choose \texttt{max\_samples\_split} to 8:
+                \begin{itemize}
+                    \item Requires 8 samples to split a node.
+                    \item Prevents the decision tree model for making rules based only small clusters.
+                \end{itemize}
+
+                \item Choose \texttt{max\_samples\_leaf} to 4:
+                \begin{itemize}
+                    \item Every leaf node must have at least 4 samples.
+                    \item Prevents the decision tree model for making rules just for a tiny cluster.
+                \end{itemize}
+
+                \item Choose \texttt{max\_features} to 2:
+                \begin{itemize}
+                    \item Choose only 2 features when sampling the data.
+                    \item This makes the dataset more vary which makes the each decision tree different.
+                \end{itemize}
+
+                \item Choose \texttt{random\_state} to 32830:
+                \begin{itemize}
+                    \item Fix the random seed to ensure the same result when executing the code.
+                \end{itemize}
+
+                \item Choose \texttt{ccp\_alpha} to 0.01:
+                \begin{itemize}
+                    \item \textbf{Cost Complexity Pruning} uses for pruning too-complex decision tree.
+                    \item Prevents branching when it is just slightly improve the purity.
+                \end{itemize}
+
+                \item Choose \texttt{max\_samples} to 50:
+                \begin{itemize}
+                    \item Choose only 50 rows when sampling the data.
+                    \item This makes the dataset more vary which makes the each decision tree different.
+                \end{itemize}
+            \end{enumerate}
+
+            \begin{lstlisting}[language=Python, caption=Random Forest Model Parameters, gobble=16]
+                N_ESTIMATORS = 100
+                CRITERION = "gini"
+                MAX_DEPTH = 3
+                MIN_SAMPLES_SPLIT = 8
+                MIN_SAMPLES_LEAF = 4
+                MAX_FEATURES = 2
+                RANDOM_STATE = 32820
+                CCP_ALPHA = 0.01
+                MAX_SAMPLES = 40
+            \end{lstlisting}
+
+    \pagebreak
+
+        \subsection{Random Forest Model}
+            Initialize and train a random forest model using adjusted parameters.
+
+            \begin{lstlisting}[language=Python, caption=Random Forest Model Parameters, gobble=16]
+                model = RandomForestClassifier(
+                    n_estimators=N_ESTIMATORS,
+                    criterion=CRITERION,
+                    max_depth=MAX_DEPTH,
+                    min_samples_split=MIN_SAMPLES_SPLIT,
+                    min_samples_leaf=MIN_SAMPLES_LEAF,
+                    max_features=MAX_FEATURES,
+                    random_state=RANDOM_STATE,
+                    ccp_alpha=CCP_ALPHA,
+                    max_samples=MAX_SAMPLES,
+                )
+                model.fit(X_train, y_train)
+            \end{lstlisting}
+
+            \textbf{Random Forest Model} consists of multiple decision trees which can access by \texttt{.estimators\_} properties. To access a single decision tree, use indexing.
+
+            \begin{lstlisting}[language=Python, caption=Random Forest Model Parameters, gobble=16]
+                example_tree_01 = model.estimators_[0]
+                example_tree_02 = model.estimators_[4]
+            \end{lstlisting}
+
+            Here are the visualization of the first and the fifth decision tree from a random forest model.
+
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.7\textwidth]{figure_09}
+                \caption{The First Decision Tree (left) The Fifth Decision Tree (right)}
+            \end{figure}
+
+    \pagebreak
+
+        \subsection{Confusion Matrix}
+            \textbf{Confusion Matrix} is a simple table used to measure how well a classification model is performing. It compares the predictions made by the model with the actual results and shows where the model was right or wrong.
+
+            \vspace{0.5em}
+
+            \noindent Given \texttt{absent} is the \texttt{positive} class, and \texttt{present} is \texttt{negative} class.
+
+            \begin{itemize}
+                \item \textbf{True Positive (TP)} means predicted \texttt{positive}, actual \texttt{positive}.
+                \item \textbf{False Positive (FP)} means predicted \texttt{positive}, actual \texttt{negative}.
+                \item \textbf{True Negative (TN)} means predicted \texttt{negative}, actual \texttt{negative}.
+                \item \textbf{False Negative (FN)} means predicted \texttt{negative}, actual \texttt{positive}.
+            \end{itemize}
+
+            For text visualization use \texttt{confusion\_matrix()}, but for image visualization use \\ \texttt{ConfusionMatrixDisplay.from\_predictions()}.
+
+            \begin{lstlisting}[language=Python, caption=Confusion Matrix of Decision Tree, gobble=16]
+                confusion_matrix = ConfusionMatrixDisplay.from_predictions(
+                    y_test, predictions, cmap=plt.cm.Greens
+                )
+                plt.title("Confusion Matrix")
+                plt.show()
+            \end{lstlisting}
+
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.7\textwidth]{figure_10}
+                \caption{Confusion Matrix of Random Forest Model}
+            \end{figure}
+
+    \pagebreak
+
+        \subsection{Classification Report}
+
+            \noindent \textbf{Class Metrics}
+            \begin{itemize}
+                \item \textbf{Precision} is the proportions of true positive (TP) by total positive predictions.
+                \item \textbf{Recall} is the proportions of true positive (TP) by total actual positive.
+                \item \textbf{Support} is the amount of actual data in the class.
+                \item \textbf{F1 Score} is the harmonic mean of \textbf{Precision} and \textbf{Recall}.
+            \end{itemize}
+
+            \noindent \textbf{Overall Metrics}
+            \begin{itemize}
+                \item \textbf{Accuracy} is the proportions of correct predictions by total predictions.
+                \item \textbf{Macro F1 Score} is mean of per-class F1 score.
+                \item \textbf{Weight Average F1 Score} is mean of per-class F1 score weighted by each class's support.
+            \end{itemize}
+
+            \begin{lstlisting}[language=Python, caption=Classification Report of Random Forest Model, gobble=16]
+                report = classification_report(y_test, predictions, digits=4)
+                print(report)
+            \end{lstlisting}
+
+            \begin{table}[h]
+                \centering
+                \begin{tabular}{|c|c|c|c|c|}
+                    \hline
+                    \rule{0pt}{2.5ex}
+                    \textbf{Class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1 Score} & \textbf{Support} \\
+                    \hline \hline
+                    \textbf{\texttt{absent}} & 0.8696 & 1.0000 & 0.9302 & 20 \\
+                    \textbf{\texttt{present}} & 1.0000 & 0.4000 & 0.5714 & 5 \\
+                    \hline
+                \end{tabular}
+                \caption{Class Metrics}
+            \end{table}
+
+            \begin{table}[h]
+                \centering
+                \begin{tabular}{|c|c|c|}
+                    \hline
+                    \rule{0pt}{2.5ex}
+                    \textbf{Accuracy} & \textbf{Macro F1 Score} & \textbf{Weighted F1 Score} \\
+                    \hline \hline
+                    0.8800 & 0.7508 & 0.8585 \\
+                    \hline
+                \end{tabular}
+                \caption{Overall Metrics}
+            \end{table}
+
+            \noindent \textbf{Result}: This random forest model got \textbf{0.7508 F1 Macro Score}.
+
+\end{document}
