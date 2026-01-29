@@ -1,8 +1,8 @@
-% DOCUMENT CLASS SETUP %
+% DOCUMENT CLASS SETUP
 \documentclass[12pt, a4paper]{article}
 
 % DOCUMENT PACKAGES
-\usepackage[]{fullpage}
+\usepackage[a4paper, margin=1in]{geometry}
 \usepackage{titling}
 \usepackage{enumitem}
 \usepackage{amsmath}
@@ -11,8 +11,54 @@
 \usepackage{listings}
 \usepackage{hyperref}
 
-% OVERWRITE COMMAND %
-\renewcommand\lstlistingname{Code}
+% FONT AND ENCODING SETUP
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{fontspec}
+
+% PROFESSIONAL CODE BLOCK
+\usepackage{tcolorbox}
+\tcbuselibrary{minted, skins, breakable}
+
+% DEFINE GITHUB DARK THEME COLORS %
+\definecolor{ghback}{HTML}{0d1117}    % Dark background
+\definecolor{ghtext}{HTML}{c9d1d9}    % Light gray text
+\definecolor{ghborder}{HTML}{30363d}  % GitHub Border color
+
+% PROFESSIONAL CODE BLOCK CONFIGURATION (MINTED VERSION) %
+\renewcommand{\theFancyVerbLine}{\textcolor{white!60!gray}{\scriptsize\arabic{FancyVerbLine}}}
+\newtcblisting{codeblock}[2][]{
+    enhanced,
+    breakable,
+    colback=ghback,
+    colframe=ghborder,
+    coltitle=ghtext,
+    fonttitle=\bfseries\small,
+    arc=3mm,
+    boxrule=0.5mm,
+    % PADDING SETTINGS
+    left=25pt,
+    right=10pt,
+    top=5pt,
+    bottom=5pt,
+    % MINTED SETTINGS
+    listing engine=minted,
+    listing only,
+    minted language=python,
+    minted options={
+        linenos,
+        numbersep=5pt,
+        fontsize=\footnotesize,
+        breaklines=true,
+        breakanywhere=true,
+        autogobble,
+        style=monokai,
+    },
+    title={#2},
+    #1
+}
 
 % DOCUMENT TITLE SETUP %
 \title {
@@ -25,38 +71,6 @@
 \author{Worralop Srichainont}
 \date{\today}
 \setlength{\droptitle}{15em}
-
-% DEFINE GITHUB DARK THEME COLORS %
-\definecolor{ghback}{HTML}{0d1117}    % Dark background
-\definecolor{ghtext}{HTML}{c9d1d9}    % Light gray text
-\definecolor{ghkeyword}{HTML}{ff7b72} % Pink/Red keywords
-\definecolor{ghstring}{HTML}{a5d6ff}  % Light blue strings
-\definecolor{ghcomment}{HTML}{8b949e} % Gray comments
-\definecolor{ghnumber}{HTML}{6e7681}  % Line number gray
-
-% CODE SNIPPET CONFIGURATIONS %
-\lstset{
-    language=Python,
-    backgroundcolor=\color{ghback},
-    basicstyle=\ttfamily\footnotesize\color{ghtext},
-    keywordstyle=\color{ghkeyword}\bfseries,
-    commentstyle=\color{ghcomment},
-    stringstyle=\color{ghstring},
-    numberstyle=\tiny\color{ghnumber},
-    % Formatting
-    breaklines=true,
-    captionpos=b,
-    keepspaces=true,
-    numbers=left,
-    numbersep=5pt,
-    showspaces=false,
-    showstringspaces=false,
-    showtabs=false,
-    tabsize=4,
-    % Frames
-    frame=lines,
-    rulecolor=\color{ghcomment}
-}
 
 % DOCUMENT CONTENTS
 \begin{document}
@@ -150,7 +164,7 @@
             \subsection{Dependencies}
             Before we start, please import these libraries.
 
-            \begin{lstlisting}[language=Python, caption=Dependencies, gobble=16]
+            \begin{codeblock}{Dependencies}
                 import pandas as pd
                 import matplotlib.pyplot as plt
                 import seaborn as sns
@@ -158,16 +172,15 @@
                 from sklearn.tree import DecisionTreeClassifier, plot_tree
                 from sklearn.ensemble import RandomForestClassifier
                 from sklearn.metrics import ConfusionMatrixDisplay, classification_report
-            \end{lstlisting}
+            \end{codeblock}
 
         \subsection{Load Data}
             Next, we are going to load CSV dataset file by using \texttt{pandas}.
 
-            \begin{lstlisting}[language=Python, caption=Load Dataset, gobble=16]
+            \begin{codeblock}{Load Dataset}
                 KYPHOSIS_URL = "https://raw.githubusercontent.com/reisenx/2110446-DATA-SCI-ENG/refs/heads/main/03-Traditional-ML/Homework/kyphosis.csv"
-
                 KYPHOSIS_DF = pd.read_csv(KYPHOSIS_URL)
-            \end{lstlisting}
+            \end{codeblock}
 
     \pagebreak
 
@@ -178,11 +191,11 @@
         \subsection{Class Distribution}
             \textbf{Class Distribution} shows amount of each target classes in the dataset.
 
-            \begin{lstlisting}[language=Python, caption=Class Distribution, gobble=16]
+            \begin{codeblock}{Class Distribution}
                 sns.countplot(data=KYPHOSIS_DF, x="Kyphosis", hue="Kyphosis", palette="Set1")
                 plt.title("Class Distribution")
                 plt.show()
-            \end{lstlisting}
+            \end{codeblock}
 
             \begin{figure}[h]
                 \centering
@@ -201,11 +214,11 @@
                 \item \textbf{No Correlation}: There is no linear relationship between the variables.
             \end{itemize}
 
-            \begin{lstlisting}[language=Python, caption=Correlation Heatmap, gobble=16]
+            \begin{codeblock}{Correlation Heatmap}
                 features = KYPHOSIS_DF.drop(columns=["Kyphosis"])
                 sns.heatmap(features.corr(), annot=True, cmap="coolwarm")
                 plt.show()
-            \end{lstlisting}
+            \end{codeblock}
 
             \begin{figure}[h]
                 \centering
@@ -222,10 +235,10 @@
                 \item \textbf{Scatter Plot} shows the relationship of two variables.
             \end{itemize}
 
-            \begin{lstlisting}[language=Python, caption=Pair Plot, gobble=16]
+            \begin{codeblock}{Pair Plot}
                 sns.pairplot(data=KYPHOSIS_DF, hue="Kyphosis", palette="Set1")
                 plt.show()
-            \end{lstlisting}
+            \end{codeblock}
 
             \begin{figure}[h]
                 \centering
@@ -259,10 +272,10 @@
                 \item \textbf{Target (\texttt{y})} is the \texttt{Kyphosis} column.
             \end{enumerate}
 
-            \begin{lstlisting}[language=Python, caption=Feature and Target Separation, gobble=16]
+            \begin{codeblock}{Feature and Target Separation}
                 X = KYPHOSIS_DF.drop(columns=["Kyphosis"])
                 y = KYPHOSIS_DF["Kyphosis"]
-            \end{lstlisting}
+            \end{codeblock}
 
         \subsection{Train and Test Dataset}
             \textbf{Stratification} is a dataset separation technique can ensure that both train datasets and test dataset have the same \texttt{absent} and \texttt{present} proportions.
@@ -275,11 +288,11 @@
                 \item \textbf{Test dataset} (30\% of the dataset) uses for testing the model.
             \end{itemize}
 
-            \begin{lstlisting}[language=Python, caption=Train and Test Dataset Separation, gobble=16]
+            \begin{codeblock}{Train and Test Dataset Separation}
                 X_train, X_test, y_train, y_test = train_test_split(
                     X, y, test_size=0.3, random_state=30, stratify=y
                 )
-            \end{lstlisting}
+            \end{codeblock}
 
     \pagebreak
 
@@ -318,20 +331,20 @@
                 \end{itemize}
             \end{enumerate}
 
-            \begin{lstlisting}[language=Python, caption=Decision Tree Parameters, gobble=16]
+            \begin{codeblock}{Decision Tree Parameters}
                 CRITERION = "gini"
                 MAX_DEPTH = 3
                 MIN_SAMPLES_SPLIT = 16
                 MIN_SAMPLES_LEAF = 8
                 CCP_ALPHA = 0.01
-            \end{lstlisting}
+            \end{codeblock}
 
     \pagebreak
 
         \subsection{Decision Tree Model}
             Initialize and train a decision tree model using adjusted parameters.
 
-            \begin{lstlisting}[language=Python, caption=Decision Tree Parameters, gobble=16]
+            \begin{codeblock}{Decision Tree Parameters}
                 model = DecisionTreeClassifier(
                     criterion=CRITERION,
                     max_depth=MAX_DEPTH,
@@ -340,11 +353,11 @@
                     ccp_alpha=CCP_ALPHA,
                 )
                 model.fit(X_train, y_train)
-            \end{lstlisting}
+            \end{codeblock}
 
             \noindent To visualize the decision tree, you can use \texttt{plot\_tree()}.
 
-            \begin{lstlisting}[language=Python, caption=Decision Tree Visualization, gobble=16]
+            \begin{codeblock}{Decision Tree Visualization}
                 plt.figure(figsize=(6, 10))
                 plot_tree(
                     model,
@@ -354,7 +367,7 @@
                     rounded=True,
                 )
                 plt.show()
-            \end{lstlisting}
+            \end{codeblock}
 
             \begin{figure}[h]
                 \centering
@@ -380,13 +393,13 @@
 
             For text visualization use \texttt{confusion\_matrix()}, but for image visualization use \\ \texttt{ConfusionMatrixDisplay.from\_predictions()}.
 
-            \begin{lstlisting}[language=Python, caption=Confusion Matrix of Decision Tree, gobble=16]
+            \begin{codeblock}{Confusion Matrix of Decision Tree}
                 confusion_matrix = ConfusionMatrixDisplay.from_predictions(
                     y_test, predictions, cmap=plt.cm.Greens
                 )
                 plt.title("Confusion Matrix")
                 plt.show()
-            \end{lstlisting}
+            \end{codeblock}
 
             \begin{figure}[h]
                 \centering
@@ -413,10 +426,10 @@
                 \item \textbf{Weight Average F1 Score} is mean of per-class F1 score weighted by each class's support.
             \end{itemize}
 
-            \begin{lstlisting}[language=Python, caption=Classification Report of Decision Tree, gobble=16]
+            \begin{codeblock}{Classification Report of Decision Tree}
                 report = classification_report(y_test, predictions, digits=4)
                 print(report)
-            \end{lstlisting}
+            \end{codeblock}
 
             \begin{table}[h]
                 \centering
@@ -506,7 +519,9 @@
                 \end{itemize}
             \end{enumerate}
 
-            \begin{lstlisting}[language=Python, caption=Random Forest Model Parameters, gobble=16]
+    \pagebreak
+
+            \begin{codeblock}{Random Forest Model Parameters}
                 N_ESTIMATORS = 100
                 CRITERION = "gini"
                 MAX_DEPTH = 3
@@ -516,14 +531,14 @@
                 RANDOM_STATE = 32820
                 CCP_ALPHA = 0.01
                 MAX_SAMPLES = 40
-            \end{lstlisting}
+            \end{codeblock}
 
     \pagebreak
 
         \subsection{Random Forest Model}
             Initialize and train a random forest model using adjusted parameters.
 
-            \begin{lstlisting}[language=Python, caption=Random Forest Model Parameters, gobble=16]
+            \begin{codeblock}{Random Forest Model Parameters}
                 model = RandomForestClassifier(
                     n_estimators=N_ESTIMATORS,
                     criterion=CRITERION,
@@ -536,14 +551,14 @@
                     max_samples=MAX_SAMPLES,
                 )
                 model.fit(X_train, y_train)
-            \end{lstlisting}
+            \end{codeblock}
 
             \textbf{Random Forest Model} consists of multiple decision trees which can access by \texttt{.estimators\_} properties. To access a single decision tree, use indexing.
 
-            \begin{lstlisting}[language=Python, caption=Random Forest Model Parameters, gobble=16]
+            \begin{codeblock}{Random Forest Model Parameters}
                 example_tree_01 = model.estimators_[0]
                 example_tree_02 = model.estimators_[4]
-            \end{lstlisting}
+            \end{codeblock}
 
             Here are the visualization of the first and the fifth decision tree from a random forest model.
 
@@ -571,13 +586,13 @@
 
             For text visualization use \texttt{confusion\_matrix()}, but for image visualization use \\ \texttt{ConfusionMatrixDisplay.from\_predictions()}.
 
-            \begin{lstlisting}[language=Python, caption=Confusion Matrix of Decision Tree, gobble=16]
+            \begin{codeblock}{Confusion Matrix of Random Forest Model}
                 confusion_matrix = ConfusionMatrixDisplay.from_predictions(
                     y_test, predictions, cmap=plt.cm.Greens
                 )
                 plt.title("Confusion Matrix")
                 plt.show()
-            \end{lstlisting}
+            \end{codeblock}
 
             \begin{figure}[h]
                 \centering
@@ -604,10 +619,10 @@
                 \item \textbf{Weight Average F1 Score} is mean of per-class F1 score weighted by each class's support.
             \end{itemize}
 
-            \begin{lstlisting}[language=Python, caption=Classification Report of Random Forest Model, gobble=16]
+            \begin{codeblock}{Classification Report of Random Forest Model}
                 report = classification_report(y_test, predictions, digits=4)
                 print(report)
-            \end{lstlisting}
+            \end{codeblock}
 
             \begin{table}[h]
                 \centering
