@@ -5,6 +5,7 @@
 *.cph
 
 # Code Testing
+*test
 *test.py
 *test.cpp
 *.exe

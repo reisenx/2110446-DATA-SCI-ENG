@@ -1,0 +1,1162 @@
+% DOCUMENT CLASS SETUP
+\documentclass[12pt, a4paper]{article}
+
+% DOCUMENT PACKAGES
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{titling}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+
+% FONT AND ENCODING SETUP
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{fontspec}
+
+% PROFESSIONAL CODE BLOCK
+\usepackage{tcolorbox}
+\tcbuselibrary{minted, skins, breakable}
+
+% DEFINE GITHUB DARK THEME COLORS %
+\definecolor{ghback}{HTML}{0d1117}    % Dark background
+\definecolor{ghtext}{HTML}{c9d1d9}    % Light gray text
+\definecolor{ghborder}{HTML}{30363d}  % GitHub Border color
+
+% PROFESSIONAL CODE BLOCK CONFIGURATION (MINTED VERSION) %
+\renewcommand{\theFancyVerbLine}{\textcolor{white!60!gray}{\scriptsize\arabic{FancyVerbLine}}}
+\newtcblisting{codeblock}[2][]{
+    enhanced,
+    breakable,
+    colback=ghback,
+    colframe=ghborder,
+    coltitle=ghtext,
+    colupper=ghtext,
+    fonttitle=\bfseries\small,
+    arc=3mm,
+    boxrule=0.5mm,
+    % PADDING SETTINGS
+    left=25pt,
+    right=10pt,
+    top=5pt,
+    bottom=5pt,
+    % MINTED SETTINGS
+    listing engine=minted,
+    listing only,
+    minted language=python,
+    minted options={
+        linenos,
+        numbersep=5pt,
+        fontsize=\footnotesize,
+        breaklines=true,
+        breakanywhere=true,
+        autogobble,
+        style=monokai,
+    },
+    title={#2},
+    #1
+}
+
+% DOCUMENT TITLE SETUP %
+\title {
+	\textbf{2110446 DATA SCIENCE AND DATA ENGINEERING} \\
+    \vspace{1em}
+	\Large{\textbf{Homework 5: Deep Learning}} \\
+    \vspace{0.5em}
+    \large{Computer Engineering, Chulalongkorn Univerity}
+}
+\author{Worralop Srichainont}
+\date{\today}
+\setlength{\droptitle}{15em}
+
+% DOCUMENT CONTENTS
+\begin{document}
+
+    \maketitle
+    \thispagestyle{empty}
+    \clearpage
+
+    \tableofcontents
+    \thispagestyle{empty}
+    \clearpage
+
+    \pagenumbering{arabic}
+
+    \part{Assignment}
+
+        \section{Objective}
+
+            In this homework, you are required to write the report from the following Jupyter notebooks:
+            \begin{itemize}
+                \item \href{https://colab.research.google.com/github/pvateekul/2110446_DSDE_2025s2/blob/main/code/Week04_DL/1_Image_classification_CIFAR10_CNN(lightning).ipynb}{Image classification with CNN}
+                \item \href{https://colab.research.google.com/github/pvateekul/2110446_DSDE_2025s2/blob/main/code/Week04_DL/2_Image_classification_Animal_EfficientNetV2(lightning).ipynb}{Image classification with EfficientNetV2s}
+                \item \href{https://colab.research.google.com/github/pvateekul/2110446_DSDE_2025s2/blob/main/code/Week04_DL/2_4_Image_classification_Animal_EfficientNet(lightning)_wandb_HuggingFace.ipynb}{Image classification with EfficientNetb0 with Weights \& Biases}
+                \item \href{https://colab.research.google.com/github/pvateekul/2110446_DSDE_2025s2/blob/main/code/Week05_AdvancedML/5_1_Huggingface_image_classification_2025s1.ipynb}{Image classification with ViT from Hugging Face \& TensorBoard} (Optional)
+                \item \href{https://colab.research.google.com/github/pvateekul/2110446_DSDE_2025s2/blob/main/code/Week07_GenerativeAI/7_1_LLM_Basic_API_Call_LangChain.ipynb#scrollTo=5LeSo2nGJQAv}{Basic API Call with LangChain}
+            \end{itemize}
+
+    \pagebreak
+
+    \part{Image classification with CNN}
+        \section{Dependencies}
+            \subsection{Import Libraries}
+                Since Google Colab environment doesn't have these libraries install, we need to install them first.
+                \begin{codeblock}[minted language=shell]{Install Additional Libraries}
+                    %pip install pytorch-lightning
+                    %pip install torchinfo
+                \end{codeblock}
+
+                Then, import these libraries.
+                \begin{codeblock}{Import Libraries}
+                    from sklearn.metrics import classification_report
+                    from sklearn.metrics import ConfusionMatrixDisplay
+                    from torchmetrics.classification import Accuracy
+                    from torchinfo import summary
+                    from tqdm.notebook import tqdm
+                    from pytorch_lightning.callbacks import ModelCheckpoint
+
+                    import numpy as np
+                    import matplotlib.pyplot as plt
+                    import torch
+                    import torchvision
+                    import torchvision.transforms as transforms
+                    import pytorch_lightning as pl
+                    import torch.nn as nn
+                    import torch.nn.functional as F
+                    import torch.optim as optim
+                \end{codeblock}
+
+    \pagebreak
+
+            \subsection{Libraries Description}
+                \noindent \textbf{Core Libraries}
+                \begin{itemize}
+                    \item \texttt{numpy} is the library for processing mathematical operations on an array.
+                    \item \texttt{matplotlib.pyplot} is the library for plotting and image visualization.
+                    \item \texttt{torch} is the main PyTorch library which provides tensors that able to calculate inside a GPU.
+                    \item \texttt{torchvision} is computer vision package for PyTorch which contains popular dataset, model architecture and image processing tools.
+                    \item \texttt{torchvision.transforms} is for image preprocessing.
+                    \item \texttt{pytorch\_lightning} is the deep learning framework to standardize and organize PyTorch code.
+                \end{itemize}
+
+                \vspace{1em}
+
+                \noindent \textbf{Model Building}
+                \begin{itemize}
+                    \item \texttt{torch.nn} contains neural network layers (e.g. Convolutional layer).
+                    \item \texttt{torch.nn.functional} contains functions used in the neural network (e.g. ReLU, Softmax).
+                    \item \texttt{torch.optim} contains optimizers (e.g. Adam, SGD) which updates model's weight based on error.
+                    \item \texttt{from torchinfo import summary} display a summary of the defined model.
+                \end{itemize}
+
+                \vspace{1em}
+
+                \noindent \textbf{Metrics \& Evaluation}
+                \begin{itemize}
+                    \item \texttt{from sklearn.metrics import classification\_report} is for creating classification report including precision, recall and F1 score.
+                    \item \texttt{from sklearn.metrics import ConfusionMatrixDisplay} is for counting and display a matrix of true positive (TP), false positive (FP), true negative (TN) and false negative (FN).
+                    \item \texttt{from torchmetrics.classification import Accuracy} is for calculating accuracy inside the PyTorch training loop.
+                \end{itemize}
+
+                \vspace{1em}
+
+                \noindent \textbf{Model Training Utilities}
+                \begin{itemize}
+                    \item \texttt{from tqdm.notebook import tqdm} is for creating a progress bar.
+                    \item \texttt{from pytorch\_lightning.callbacks import ModelCheckpoint} is for automatically saving the model weights whenever the model improves.
+                \end{itemize}
+
+    \pagebreak
+
+            \subsection{GPU Utilization}
+                GPU is preferred in deep learning task. To confirm if this notebook detects the GPU, just use the following script.
+                \begin{codeblock}[minted language=shell]{GPU Report Command Line}
+                    !nvidia-smi
+                \end{codeblock}
+
+                if the GPU is detected, it should appear something like this.
+                \begin{figure}[h]
+                    \centering
+                    \includegraphics[width=\textwidth]{image_01}
+                    \caption{GPU Report}
+                \end{figure}
+
+    \pagebreak
+
+        \section{CIFAR10 Dataset Preparation}
+            \subsection{CIFAR10 Dataset}
+                The \texttt{CIFAR-10 dataset} (Canadian Institute For Advanced Research) is a collection of images that are commonly used to train machine learning and computer vision algorithms. It is one of the most widely used datasets for machine learning research. 
+
+                \vspace{0.5em}
+
+                The CIFAR-10 dataset contains 60,000 $32 \times 32$ color images in 10 different classes. The 10 different classes represent airplanes, cars, birds, cats, deer, dogs, frogs, horses, ships, and trucks. There are 6,000 images of each class.
+
+                \begin{figure}[h]
+                    \centering
+                    \includegraphics[width=0.8\textwidth]{image_02}
+                    \caption{CIFAR10 Dataset}
+                \end{figure}
+
+                For more information about CIFAR10 dataset, please read: \url{https://www.cs.toronto.edu/~kriz/cifar.html}
+
+    \pagebreak
+
+            \subsection{Image Preprocessing Pipeline}
+                Create image preprocessing pipeline using \texttt{transforms.Compose()} to pack every preprocessing command together.
+                \begin{itemize}
+                    \item \texttt{transforms.ToTensor()} converts a standard PNG or JPEG image into PyTorch tensor.
+                    \item \texttt{transforms.Resize([32, 32])} forces every image to have $32 \times 32$ resolution.
+                \end{itemize}
+                \begin{codeblock}{Image Preprocessing Pipeline}
+                    IMAGE_WIDTH = 32
+                    IMAGE_HEIGHT = 32
+
+                    TRANSFORM_PIPELINE = transforms.Compose([
+                        transforms.ToTensor(),
+                        transforms.Resize([IMAGE_WIDTH, IMAGE_HEIGHT])
+                    ])
+                \end{codeblock}
+
+            \vspace{1em}
+
+            \subsection{Load CIFAR10 Train Dataset}
+                First, load 50,000 training images from the \textbf{CIFAR10} dataset using \texttt{torchvision.datasets}.
+                \begin{codeblock}{Load Training CIFAR10 Dataset}
+                    ROOT_PATH = "./data"
+
+                    all_train_images = torchvision.datasets.CIFAR10(
+                        root=ROOT_PATH, train=True, download=True, transform=TRANSFORM_PIPELINE
+                    )
+                \end{codeblock}
+
+                Then split the 50,000 images into 2 parts: 40,000 images for training and 10,000 images for validation
+                \begin{codeblock}{Split Training and Validation Dataset}
+                    N_TRAIN = 40000
+                    N_VALIDATION = 10000
+                    
+                    train_images, validate_images = torch.utils.data.random_split(
+                        all_train_images, [N_TRAIN, N_VALIDATION]
+                    )
+                \end{codeblock}
+
+    \pagebreak
+
+            \subsection{Load CIFAR10 Test Dataset}
+                Load 10,000 test images from the \textbf{CIFAR10} dataset using \texttt{torchvision.datasets}.
+                \begin{codeblock}{Load Testing CIFAR10 Dataset}
+                    ROOT_PATH = "./data"
+
+                    test_images = torchvision.datasets.CIFAR10(
+                        root=ROOT_PATH, train=False, download=True, transform=TRANSFORM_PIPELINE
+                    )
+                \end{codeblock}
+
+            \vspace{1em}
+
+            \subsection{Create \texttt{DataLoader}}
+                \texttt{DataLoader} is used for grabbing a batch of 32 images and feeds them to a model when training, validate or testing.
+
+                It is crucial for shuffle the image order inside a training batch to prevent model to memorize image order patterns.
+                \begin{codeblock}{Create \texttt{DataLoader}}
+                    BATCH_SIZE = 32
+
+                    train_loader = torch.utils.data.DataLoader(
+                        train_images, batch_size=BATCH_SIZE, shuffle=True
+                    )
+
+                    validate_loader = torch.utils.data.DataLoader(
+                        validate_images, batch_size=BATCH_SIZE, shuffle=False
+                    )
+
+                    test_loader = torch.utils.data.DataLoader(
+                        test_images, batch_size=BATCH_SIZE, shuffle=False
+                    )
+                \end{codeblock}
+
+    \pagebreak
+
+        \section{CIFAR10 Dataset Visualization}
+            This section focus on image visualization from variables from the previous processes to ensure that the dataset preparation has no problem.
+
+            \subsection{Utilities}
+                \subsubsection{Display Random Image by Class}
+                    In this section, we are going to create a utility function to display random image from all classes. The processes inside the function are follows:
+                    \begin{enumerate}
+                        \item Get the unique class IDs from the labels which usually a list of numbers \\
+                                (e.g. $\{0, 1, \dots, 8, 9\}$).
+                        \item Create an empty figure for plotting.
+                        \item Iterate each class in the dataset. For each class do as follows:
+                        \begin{enumerate}
+                            \item[3.1.] Get the mask array indicating if an image is in the current class. (e.g. $\{\text{True}, \text{False}, \dots, \text{False}, \text{True}\}$).
+                            \item[3.2.] Calculate the probability distribution for image randomization \\
+                                        (e.g. $\{0.05, 0.00, \dots, 0.00, 0.05\}$). For images which is not in the current class will have zero probability, so it cannot be picked.
+                            \item[3.3.] Randomly picking images for the current class from the image dataset by using the customized probability distribution.
+                            \item[3.4.] Plot picked images in the current class vertically.
+                        \end{enumerate}
+                    \end{enumerate}
+
+                    \begin{codeblock}{Display Image by Class Function}
+                        def display_images_by_class(images, labels, n_display, class_names):
+                            """
+                            The utility function for displaying multiple images in a grid separated by classes.
+
+                            Args:
+                                images (np.ndarray): images dataset stored inside the NumPy array.
+                                labels (list[int]): label for each image in the dataset.
+                                n_display (int): amount of images to display for each class.
+                                class_names (tuple[str]): image class names.
+                            """
+                            # Find total amount of images
+                            n_images = images.shape[0]
+
+                            # Find unique IDs of the dataset.
+                            class_ids = np.unique(labels)
+                            n_cols = len(class_ids)
+
+                            # Create a blank figure
+                            plt.figure(figsize=(2 * n_cols, 2 * n_display))
+                            
+                            # Iterate each class (column)
+                            for c in range(n_cols):
+                                # Get a flatten boolean array which indicates whether it is the current class.
+                                is_current_class = np.squeeze(labels == class_ids[c])
+                                
+                                # Calculate a probability distribution of randomization.
+                                pick_image_probs = is_current_class / is_current_class.sum()
+                                
+                                # Get random images indices for the current class.
+                                image_indices = np.random.choice(
+                                    n_images, n_display, replace=False, p=pick_image_probs
+                                )
+
+                                # Iterate each row (image) of the current class.
+                                for r in range(n_display):
+                                    # Calculate the current grid index.
+                                    grid_idx = ((r * n_cols) + c) + 1
+                                    
+                                    # Create subplot inside the figure.
+                                    plt.subplot(n_display, n_cols, grid_idx)
+                                    
+                                    # Display the class name for the first row.
+                                    if r == 0:
+                                        plt.title(class_names[c])
+                                    
+                                    # Display the current image inside the current grid.
+                                    plt.axis("off")
+                                    plt.imshow(images[image_indices[r]], aspect="equal")
+                    \end{codeblock}
+
+    \pagebreak
+
+                \subsubsection{Display Image from PyTorch}
+                    The problem on image visualization from PyTorch tensor are as follows:
+                    \begin{itemize}
+                        \item \textbf{PyTorch} stores image as: \texttt{(channels, height, width)}.
+                        \item \textbf{Matplotlib} stores image as: \texttt{(height, width, channels)}
+                    \end{itemize}
+                    That's why we need the utility function to rearrange the image array for Matplotlib to visualize correctly.
+
+                    \begin{codeblock}{Display Image from PyTorch}
+                        def display_image_from_pt(image_pt, plot_title):
+                            """
+                            The utility function to display image from PyTorch tensor.
+
+                            Args:
+                                image_pt (torch.Tensor): image tensor from PyTorch
+                                plot_title (str): title to display on the plot
+                            """
+                            # Convert PyTorch tensor into NumPy array.
+                            image_np = image_pt.numpy()
+
+                            # Rearrange order of the array.
+                            image_np = np.transpose(image_np, (1, 2, 0))
+
+                            # Display an image
+                            plt.figure(figsize=(16, 8))
+                            plt.title(plot_title)
+                            plt.imshow(image_np)
+                            plt.axis("off")
+                            plt.show()
+                    \end{codeblock}
+
+    \pagebreak
+
+            \subsection{Class Visualization}
+                In this section, we are going to display random images from each class in \textbf{CIFAR10} dataset to ensure the images inside \texttt{train\_images} are not corrupted.
+                \begin{codeblock}{Class Visualization}
+                    CLASS_NAMES = (
+                        "plane", "car", "bird", "cat", "deer",
+                        "dog", "frog", "horse", "ship", "truck"
+                    )
+
+                    display_images_by_class(
+                        images=train_images.dataset.data,
+                        labels=train_images.dataset.targets,
+                        n_display=3,
+                        class_names=CLASS_NAMES,
+                    )
+                \end{codeblock}
+
+                \begin{figure}[h]
+                    \centering
+                    \includegraphics[width=\textwidth]{image_03}
+                    \caption{Class Visualization}
+                \end{figure}
+
+    \pagebreak
+
+            \subsection{Batch Visualization}
+                In this section, we are going to display images from a batch picked from the \texttt{DataLoader} to ensure the \texttt{DataLoader} are working properly.
+                \begin{codeblock}{Batch Visualization}
+                    # Configuration
+                    IMAGES_PER_ROW = 8
+                    PLOT_TITLE = "Batch of 32 training images"
+
+                    # Get a batch of images.
+                    images, labels = next(iter(train_loader))
+
+                    # Create a grid of images inside a batch.
+                    batch_images = torchvision.utils.make_grid(images, nrow=IMAGES_PER_ROW)
+
+                    # Display the batch of images.
+                    display_image_from_pt(image_pt=batch_images, plot_title=PLOT_TITLE)
+                \end{codeblock}
+
+                \begin{figure}[h]
+                    \centering
+                    \includegraphics[width=\textwidth]{image_04}
+                    \caption{Batch Visualization}
+                \end{figure}
+
+    \pagebreak
+
+                To visualize label of each image inside a batch, use this following code:
+                \begin{codeblock}{Batch Labels}
+                    for image_idx in range(0, BATCH_SIZE, IMAGES_PER_ROW):
+                        for label in labels[image_idx: image_idx + IMAGES_PER_ROW]:
+                            print(CLASS_NAMES[label], end="\t")
+                        print()
+                \end{codeblock}
+
+                \begin{table}[h]
+                    \centering
+                    \begin{tabular}{|c|c|c|c|c|c|c|c|}
+                        \hline
+                        bird & frog & truck & horse & truck & truck & bird & frog \\
+                        \hline
+                        frog & plane & dog & truck & cat & frog & horse & ship \\
+                        \hline
+                        ship & deer & frog & cat & dog & dog & car & cat \\
+                        \hline
+                        frog & deer & horse & truck & plane & deer & truck & frog \\
+                        \hline
+                    \end{tabular}
+                    \caption{Batch Labels}
+                \end{table}
+
+    \pagebreak
+
+        \section{CNN Model}
+            \subsection{Model Layers}
+                We are design a model similar to LeNet-5 Convolutional Neural Network (CNN) model architecture which consists of:
+                \begin{enumerate}
+                    \item \textbf{Convolutional Layer} using $5 \times 5$ kernel with 3 input channels and 6 output channels. Then, use ReLU as an activation function.
+                    \item \textbf{Max Pooling Layer} using $2 \times 2$ kernel and set stride to 2.
+                    \item \textbf{Convolutional Layer} using $5 \times 5$ kernel with 6 input channels and 15 output channels. Then, use ReLU as an activation function.
+                    \item \textbf{Max Pooling Layer} using $2 \times 2$ kernel and set stride to 2.
+                    \item \textbf{Fully Connected Layer} using with 400 inputs and 120 outputs. Then, use ReLU as an activation function.
+                    \item \textbf{Fully Connected Layer} using with 120 inputs and 84 outputs. Then, use ReLU as an activation function.
+                    \item \textbf{Fully Connected Layer} using with 84 inputs and 10 outputs.
+                    \item \textbf{Output Layer} using softmax function for output the classification result.
+                \end{enumerate}
+
+                \begin{figure}[h]
+                    \centering
+                    \includegraphics[width=\textwidth]{image_05}
+                    \caption{LeNet-5 CNN Architecture}
+                \end{figure}
+    
+    \pagebreak
+                Define the model layers inside the constructor method of the class.
+                \begin{codeblock}{Define Model Layers}
+                    class CNN(pl.LightningModule):
+                        def __init__(self):
+                            super().__init__()
+
+                            # The first convolutional layer
+                            self.conv1 = nn.Conv2d(3, 6, 5)
+
+                            # Max pooling layer for downsampling
+                            self.pool = nn.MaxPool2d(2, 2)
+
+                            # The second convolutional layer
+                            self.conv2 = nn.Conv2d(6, 16, 5)
+
+                            # Fully connected layers
+                            self.fc1 = nn.Linear(400, 120)
+                            self.fc2 = nn.Linear(120, 84)
+                            self.fc3 = nn.Linear(84, 10)
+
+                            # Softmax layer for classification result.
+                            self.softmax = torch.nn.Softmax(dim=1)
+                \end{codeblock}
+
+                Then write the training process of the model in \texttt{forward(self, x)} method.
+                \begin{codeblock}{Model Training Processes}
+                    class CNN(pl.LightningModule):
+                        def forward(self, x):
+                            # Feature extraction using convolutional layers with ReLU.
+                            x = self.pool(F.relu(self.conv1(x)))
+                            x = self.pool(F.relu(self.conv2(x)))
+
+                            # Flatten the feature vector for fully connected layers.
+                            x = torch.flatten(x, start_dim=1)
+
+                            # Classification process by fully connected layers with ReLU.
+                            x = F.relu(self.fc1(x))
+                            x = F.relu(self.fc2(x))
+                            x = self.fc3(x)
+
+                            # Predict classification result using softmax layer.
+                            x = self.softmax(x)
+                            return x
+                \end{codeblock}
+
+    \pagebreak
+
+            \subsection{Loss Function \& Optimizers}
+                We are using Cross Entropy Loss as a loss function for this model, and use Adam optimizer with 0.001 learning rate.
+
+                \begin{codeblock}{Model Loss Function and Optimizers}
+                    class CNN(pl.LightningModule):
+                        def __init__(self):
+                            # ...MODEL LAYERS...
+
+                            # Define loss function for a model
+                            self.criterion = nn.CrossEntropyLoss()
+
+                            # Define accuracy metrics
+                            self.accuracy = Accuracy(task="multiclass", num_classes=10)
+
+                        def configure_optimizers(self):
+                            # Use Adam optimizer with 0.001 learning rate.
+                            return optim.Adam(self.parameters(), lr=1e-3)
+                \end{codeblock}
+
+            \subsection{Model Summary}
+                To read the overall description of a model, just use this \texttt{summary} command and set \texttt{input\_size} as parameter which is a tuple in the formal \texttt{(batch\_size, channel, width, height)}.
+
+                \begin{codeblock}{Model Summary}
+                    net = CNN().to(device)
+                    print(summary(net, input_size=(32, 3, 32, 32)))
+                \end{codeblock}
+
+                It should appear something similar to this.
+                \begin{figure}[h]
+                    \centering
+                    \includegraphics[width=0.8\textwidth]{image_06}
+                    \caption{Model Summary}
+                \end{figure}
+
+    \pagebreak
+
+        \section{Model Training}
+            \subsection{Model Checkpoint}
+                In deep learning, the best model is not always the model in the very last epoch so we should have checkpoint feature.
+
+                To make a checkpoint feature which saves the model that has maximum validation accuracy, you need to use \texttt{ModelCheckpoint()} with following configurations:
+                \begin{itemize}
+                    \item Set \texttt{monitor} to \texttt{val\_acc} to monitor validation accuracy of the model in each epoch.
+                    \item Set \texttt{mode} to \texttt{max} to save a model which has the maximum validation accuracy.
+                    \item Set \texttt{save\_top\_k} to \texttt{1} to save only the best model.
+                    \item \texttt{filename} is the model's filename format.
+                    \item Set \texttt{verbose} to \texttt{True} to display the message when saving a model.
+                \end{itemize}
+
+                \begin{codeblock}{Model Checkpoint}
+                    checkpoint_callback = ModelCheckpoint(
+                        monitor="val_acc",
+                        mode="max",
+                        save_top_k=1,
+                        filename="best-acc-{epoch:02d}-{val_acc:.4f}",
+                        verbose=True,
+                    )
+                \end{codeblock}
+
+            \subsection{Model Training}
+                PyTorch Lightning framework has \texttt{Trainer} object which handles the training loop for you by following the defined method in \texttt{CNN} class.
+                \begin{itemize}
+                    \item \texttt{max\_epoch} is the maximum epochs of the model.
+                    \item \texttt{callbacks} is the model checkpoint object.
+                \end{itemize}
+
+                After initialize the \texttt{Trainer} object, use \texttt{fit()} command to start training a model.
+                \begin{itemize}
+                    \item \texttt{model} is the initialized model.
+                    \item \texttt{train\_dataloader} is the \texttt{DataLoader} for training dataset.
+                    \item \texttt{val\_dataloader} is the \texttt{DataLoader} for validation dataset.
+                \end{itemize}
+
+                \begin{codeblock}{Model Training}
+                    trainer = pl.Trainer(max_epochs=10, callbacks=[checkpoint_callback])
+                    trainer.fit(net, trainloader, valloader)
+                \end{codeblock}
+
+    \pagebreak
+
+            \subsection{Training Metrics}
+                During model training process, the loss and accuracy can be plotted as follows:
+                \begin{figure}[h]
+                    \centering
+                    \includegraphics[width=0.6\textwidth]{image_07}
+                    \caption{Training Metrics}
+                \end{figure}
+
+    \pagebreak
+
+        \section{Model Evaluation}
+            After done with training and validation the model, we will process with evaluating the model using the test dataset and has the following result:
+
+            Confusion matrix from comparing the predictions with ground truth.
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.8\textwidth]{image_08}
+                \caption{Confusion Matrix}
+            \end{figure}
+
+            Precision, recall and F1 score metrics result separated by class.
+            \begin{table}[h]
+                \centering
+                \begin{tabular}{|c|c|c|c|}
+                    \hline
+                    Class & Precision & Recall & F1 Score \\
+                    \hline
+                    plane & 0.6000 & 0.5880 & 0.5939 \\
+                    car & 0.5310 & 0.7370 & 0.6173 \\
+                    bird & 0.4190 & 0.2950 & 0.3462 \\
+                    cat & 0.3957 & 0.2600 & 0.3138 \\
+                    deer & 0.4922 & 0.3480 & 0.4077 \\
+                    dog & 0.4484 & 0.4260 & 0.4369 \\
+                    frog & 0.5245 & 0.6740 & 0.5899 \\
+                    horse & 0.4783 & 0.6610 & 0.5550 \\
+                    ship & 0.6598 & 0.5430 & 0.5957 \\
+                    truck & 0.4920 & 0.5530 & 0.5207 \\
+                    \hline
+                \end{tabular}
+                \caption{Per-class Evaluation Result}
+            \end{table}
+
+    \pagebreak
+
+            Overall precision, recall and F1 score metrics result.
+            \begin{table}[h]
+                \centering
+                \begin{tabular}{|c|c|}
+                    \hline
+                    Metrics & Value \\
+                    \hline
+                    Accuracy & 0.5085 \\
+                    Macro F1-score & 0.4977 \\
+                    Weighted F1-score & 0.4977 \\
+                    \hline
+                \end{tabular}
+                \caption{Overall Evaluation Result}
+            \end{table}
+
+            Finally, display a row of 5 images. Above each one, display the model confidence about the prediction.
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=\textwidth]{image_09}
+                \caption{Model Confidence}
+            \end{figure}
+
+    \pagebreak
+
+    \part{Image classification with EfficientNetV2}
+        \section{Dataset Preparation}
+            \subsection{Image Preprocessing Pipeline}
+                Create image preprocessing pipeline using \texttt{transforms.Compose()} to pack every preprocessing command together.
+                
+                First, create the image preprocessing pipeline for training image set.
+                \begin{itemize}
+                    \item \texttt{transforms.Resize([230, 230])} forces every image to have $230 \times 230$ resolution.
+                    \item \texttt{transforms.RandomRotation(30)} randomly rotates the image by any angle between ${-30}^{\circ}$ and ${30}^{\circ}$.
+                    \item \texttt{transforms.RandomCrop(224)} cuts out a random $224 \times 224$ square from the $230 \times 230$ image.
+                    \item \texttt{transforms.RandomHorizontalFlip()} randomly flips the image left-to-right with 50\% probability.
+                    \item \texttt{transforms.RandomVerticalFlip()} randomly flips the image upside-down with 50\% probability.
+                    \item \texttt{transforms.ToTensor()} converts an image to PyTorch tensor.
+                    \item \texttt{transforms.Normalize()} normalize the value inside the PyTorch tensors.
+                \end{itemize}
+
+                Next, create the image preprocessing pipeline for validation and testing image set.
+                \begin{itemize}
+                    \item \texttt{transforms.Resize([230, 230])} forces every image to have $230 \times 230$ resolution.
+                    \item \texttt{transforms.ToTensor()} converts an image to PyTorch tensor.
+                    \item \texttt{transforms.Normalize()} normalize the value inside the PyTorch tensors.
+                \end{itemize}
+
+    \pagebreak
+
+            \subsection{Create \texttt{DataLoader}}
+                In this section, we are going to create the \texttt{AnimalDataset} class to create image dataset and \texttt{DataLoader}.
+
+                Since the dataset is not available in the library like \textbf{CIFAR10} dataset in the previous section, we need to grab each image and label and create the image.
+
+                \begin{codeblock}{Create Dataset}
+                    trainset = AnimalDataset("./Dataset_animal2/train", transform_train)
+                    valset = AnimalDataset("./Dataset_animal2/val", transform)
+                    testset = AnimalDataset("./Dataset_animal2/test", transform)
+                \end{codeblock}
+
+                Then, create the \texttt{DataLoader} from the dataset and set \texttt{batch\_size} to 32.
+                \begin{codeblock}{Create DataLoader}
+                    trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True)
+                    valloader = torch.utils.data.DataLoader(valset, batch_size=batch_size, shuffle=True)
+                    testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=True)
+                \end{codeblock}
+
+                Now we have the dataset and the \texttt{DataLoader} for model training and evaluation.
+
+    \pagebreak
+
+            \subsection{Dataset Visualization}
+                \subsubsection{Class Visualization}
+                    In this section, we are going to display random images from each class in the dataset.
+
+                    \begin{figure}[h]
+                        \centering
+                        \includegraphics[width=\textwidth]{image_10}
+                        \caption{Class Visualization}
+                    \end{figure}
+
+                \subsubsection{Batch Visualization}
+                    In this section, we are going to display images from a batch picked from the \texttt{DataLoader} to ensure the \texttt{DataLoader} are working properly.
+
+                    \begin{figure}[h]
+                        \centering
+                        \includegraphics[width=\textwidth]{image_11}
+                        \caption{Batch Visualization}
+                    \end{figure}
+
+    \pagebreak
+
+        \section{EfficientNetV2 Model}
+            \subsection{Model Creation}
+                In this notebook, we are just download the \textbf{EfficientNetV2} pre-trained model which is lot easier than the previous section. However, we need to modify the output layer to classify our 10 animals.
+                \begin{codeblock}{Model Architecture}
+                    def __init__(self, num_classes=10, learning_rate=1e-3):
+                        super().__init__()
+                        # Load EfficientNetV2 model from torchvision
+                        self.model = models.efficientnet_v2_s(weights="IMAGENET1K_V1")
+
+                        # Replace the classifier with a custom layer for our task
+                        self.model.classifier[1] = nn.Linear(
+                            self.model.classifier[1].in_features, num_classes
+                        )
+                \end{codeblock}
+
+                Next, set loss function to cross-entropy loss function, set evaluation metrics to accuracy and set learning rate to 0.003.
+                \begin{codeblock}{Loss Function \& Evaluation Metrics}
+                    def __init__(self, num_classes=10, learning_rate=1e-3):
+                        # ...MODEL LAYERS...
+
+                        self.criterion = nn.CrossEntropyLoss()
+                        self.accuracy = Accuracy(task="multiclass", num_classes=num_classes)
+                        self.learning_rate = learning_rate
+                \end{codeblock}
+
+                Finally, set the optimizer to Adam optimizer with 0.001 learning rate.
+                \begin{codeblock}{Loss Function \& Evaluation Metrics}
+                    def configure_optimizers(self):
+                        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+                        return optimizer
+                \end{codeblock}
+
+    \pagebreak
+
+            \subsection{Model Summary}
+                To read the overall description of a model, just use this \texttt{summary} command and set \texttt{input\_size} as parameter which is a tuple in the formal \texttt{(batch\_size, channel, width, height)}.
+
+                \begin{codeblock}{Model Summary}
+                    net = LitEfficientNetV2().to(device)
+                    print(summary(net, input_size=(32, 3, 224, 224)))
+                \end{codeblock}
+
+                It should appear something similar to this.
+                \begin{figure}[h]
+                    \centering
+                    \includegraphics[width=0.8\textwidth]{image_12}
+                    \caption{Model Summary}
+                \end{figure}
+
+    \pagebreak
+
+        \section{Model Training}
+            \subsection{Model Checkpoint}
+                In deep learning, the best model is not always the model in the very last epoch so we should have checkpoint feature.
+
+                To make a checkpoint feature which saves the model that has maximum validation accuracy, you need to use \texttt{ModelCheckpoint()} with following configurations:
+                \begin{itemize}
+                    \item Set \texttt{monitor} to \texttt{val\_acc} to monitor validation accuracy of the model in each epoch.
+                    \item Set \texttt{mode} to \texttt{max} to save a model which has the maximum validation accuracy.
+                    \item Set \texttt{save\_top\_k} to \texttt{1} to save only the best model.
+                    \item \texttt{filename} is the model's filename format.
+                    \item Set \texttt{verbose} to \texttt{True} to display the message when saving a model.
+                \end{itemize}
+
+                \begin{codeblock}{Model Checkpoint}
+                    checkpoint_callback = ModelCheckpoint(
+                        monitor="val_acc",
+                        mode="max",
+                        save_top_k=1,
+                        filename="efficientnetv2-best-{epoch:02d}-{val_acc:.4f}",
+                        verbose=True,
+                    )
+                \end{codeblock}
+
+            \subsection{Model Training}
+                PyTorch Lightning framework has \texttt{Trainer} object which handles the training loop for you by following the defined method in \texttt{EfficientNetV2} class.
+                \begin{itemize}
+                    \item \texttt{max\_epoch} is the maximum epochs of the model.
+                    \item \texttt{callbacks} is the model checkpoint object.
+                \end{itemize}
+
+                After initialize the \texttt{Trainer} object, use \texttt{fit()} command to start training a model.
+                \begin{itemize}
+                    \item \texttt{model} is the initialized model.
+                    \item \texttt{train\_dataloader} is the \texttt{DataLoader} for training dataset.
+                    \item \texttt{val\_dataloader} is the \texttt{DataLoader} for validation dataset.
+                \end{itemize}
+
+                \begin{codeblock}{Model Training}
+                    trainer = pl.Trainer(max_epochs=5, callbacks=[checkpoint_callback])
+                    trainer.fit(net, trainloader, valloader)
+                \end{codeblock}
+
+    \pagebreak
+
+            \subsection{Training Metrics}
+                During model training process, the loss and accuracy can be plotted as follows:
+                \begin{figure}[h]
+                    \centering
+                    \includegraphics[width=0.6\textwidth]{image_13}
+                    \caption{Training Metrics}
+                \end{figure}
+
+    \pagebreak
+
+        \section{Model Evaluation}
+            After done with training and validation the model, we will process with evaluating the model using the test dataset and has the following result:
+
+            Confusion matrix from comparing the predictions with ground truth.
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.75\textwidth]{image_14}
+                \caption{Confusion Matrix}
+            \end{figure}
+
+            Precision, recall and F1 score metrics result separated by class.
+            \begin{table}[h]
+                \centering
+                \begin{tabular}{|c|c|c|c|}
+                    \hline
+                    Class & Precision & Recall & F1 Score \\
+                    \hline
+                    butterfly & 0.8929 & 0.8333 & 0.8621 \\
+                    cat & 1.0000 & 0.8667 & 0.9286 \\
+                    chicken & 0.8056 & 0.9667 & 0.8788 \\
+                    cow & 0.8750 & 0.9333 & 0.9032 \\
+                    dog & 0.8000 & 0.8000 & 0.8000 \\
+                    elephant & 0.9630 & 0.8667 & 0.9123 \\
+                    horse & 0.8529 & 0.9667 & 0.9062 \\
+                    sheep & 0.8929 & 0.8333 & 0.8621 \\
+                    spider & 0.9333 & 0.9333 & 0.9333 \\
+                    squirrel & 0.9310 & 0.9000 & 0.9153 \\
+                    \hline
+                \end{tabular}
+                \caption{Per-class Evaluation Result}
+            \end{table}
+
+    \pagebreak
+
+            Overall precision, recall and F1 score metrics result.
+            \begin{table}[h]
+                \centering
+                \begin{tabular}{|c|c|}
+                    \hline
+                    Metrics & Value \\
+                    \hline
+                    Accuracy & 0.8900 \\
+                    Macro F1-score & 0.8902 \\
+                    Weighted F1-score & 0.8902 \\
+                    \hline
+                \end{tabular}
+                \caption{Overall Evaluation Result}
+            \end{table}
+
+            Finally, display a row of 5 images. Above each one, display the model confidence about the prediction.
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=\textwidth]{image_15}
+                \caption{Model Confidence}
+            \end{figure}
+
+    \pagebreak
+
+    \part{Image classification with EfficientNetb0}
+        \section{Dataset Preparation}
+            \subsection{Image Preprocessing Pipeline}
+                Create image preprocessing pipeline using \texttt{transforms.Compose()} to pack every preprocessing command together.
+                
+                First, create the image preprocessing pipeline for training image set.
+                \begin{itemize}
+                    \item \texttt{transforms.Resize([230, 230])} forces every image to have $230 \times 230$ resolution.
+                    \item \texttt{transforms.RandomRotation(30)} randomly rotates the image by any angle between ${-30}^{\circ}$ and ${30}^{\circ}$.
+                    \item \texttt{transforms.RandomCrop(224)} cuts out a random $224 \times 224$ square from the $230 \times 230$ image.
+                    \item \texttt{transforms.RandomHorizontalFlip()} randomly flips the image left-to-right with 50\% probability.
+                    \item \texttt{transforms.RandomVerticalFlip()} randomly flips the image upside-down with 50\% probability.
+                    \item \texttt{transforms.ToTensor()} converts an image to PyTorch tensor.
+                    \item \texttt{transforms.Normalize()} normalize the value inside the PyTorch tensors.
+                \end{itemize}
+
+                Next, create the image preprocessing pipeline for validation and testing image set.
+                \begin{itemize}
+                    \item \texttt{transforms.Resize([230, 230])} forces every image to have $230 \times 230$ resolution.
+                    \item \texttt{transforms.ToTensor()} converts an image to PyTorch tensor.
+                    \item \texttt{transforms.Normalize()} normalize the value inside the PyTorch tensors.
+                \end{itemize}
+
+    \pagebreak
+
+            \subsection{Create \texttt{DataLoader}}
+                In this section, we are going to create the \texttt{AnimalDataset} class to create image dataset and \texttt{DataLoader}.
+
+                Since the dataset is not available in the library like \textbf{CIFAR10} dataset in the previous section, we need to grab each image and label and create the image.
+
+                \begin{codeblock}{Create Dataset}
+                    trainset = AnimalDataset("./Dataset_animal2/train", transform_train)
+                    valset = AnimalDataset("./Dataset_animal2/val", transform)
+                    testset = AnimalDataset("./Dataset_animal2/test", transform)
+                \end{codeblock}
+
+                Then, create the \texttt{DataLoader} from the dataset and set \texttt{batch\_size} to 32.
+                \begin{codeblock}{Create DataLoader}
+                    trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True)
+                    valloader = torch.utils.data.DataLoader(valset, batch_size=batch_size, shuffle=True)
+                    testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=True)
+                \end{codeblock}
+
+                Now we have the dataset and the \texttt{DataLoader} for model training and evaluation.
+
+    \pagebreak
+
+            \subsection{Dataset Visualization}
+                \subsubsection{Class Visualization}
+                    In this section, we are going to display random images from each class in the dataset.
+
+                    \begin{figure}[h]
+                        \centering
+                        \includegraphics[width=\textwidth]{image_16}
+                        \caption{Class Visualization}
+                    \end{figure}
+
+                \subsubsection{Batch Visualization}
+                    In this section, we are going to display images from a batch picked from the \texttt{DataLoader} to ensure the \texttt{DataLoader} are working properly.
+
+                    \begin{figure}[h]
+                        \centering
+                        \includegraphics[width=\textwidth]{image_17}
+                        \caption{Batch Visualization}
+                    \end{figure}
+
+    \pagebreak
+
+        \section{EfficientNetb0 Model}
+            \subsection{Model Creation}
+                In this notebook, we are just download the \textbf{EfficientNetb0} pre-trained model which is lot easier than the previous section. However, we need to modify the output layer to classify our 10 animals.
+                \begin{codeblock}{Model Architecture}
+                    def __init__(self, num_classes=10, learning_rate=1e-3):
+                        super().__init__()
+
+                        # Load EfficientNetb0 model from hugging face
+                        self.model = EfficientNetForImageClassification.from_pretrained(
+                            "google/efficientnet-b0",
+                            num_labels=num_classes,
+                            ignore_mismatched_sizes=True,
+                        )
+                \end{codeblock}
+
+                Next, set loss function to cross-entropy loss function, set evaluation metrics to accuracy and set learning rate to 0.003.
+                \begin{codeblock}{Loss Function \& Evaluation Metrics}
+                    def __init__(self, num_classes=10, learning_rate=1e-3):
+                        # ...MODEL LAYERS...
+
+                        self.criterion = nn.CrossEntropyLoss()
+                        self.accuracy = Accuracy(task="multiclass", num_classes=num_classes)
+                        self.learning_rate = learning_rate
+                \end{codeblock}
+
+                Finally, set the optimizer to Adam optimizer with 0.001 learning rate.
+                \begin{codeblock}{Loss Function \& Evaluation Metrics}
+                    def configure_optimizers(self):
+                        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+                        return optimizer
+                \end{codeblock}
+
+    \pagebreak
+
+            \subsection{Model Summary}
+                To read the overall description of a model, just use this \texttt{summary} command and set \texttt{input\_size} as parameter which is a tuple in the formal \texttt{(batch\_size, channel, width, height)}.
+
+                \begin{codeblock}{Model Summary}
+                    net = LitEfficientNetV2().to(device)
+                    print(summary(net, input_size=(32, 3, 224, 224)))
+                \end{codeblock}
+
+                It should appear something similar to this.
+                \begin{figure}[h]
+                    \centering
+                    \includegraphics[width=0.8\textwidth]{image_18}
+                    \caption{Model Summary}
+                \end{figure}
+
+    \pagebreak
+
+        \section{Model Training}
+            \subsection{Model Checkpoint}
+                In deep learning, the best model is not always the model in the very last epoch so we should have checkpoint feature.
+
+                To make a checkpoint feature which saves the model that has maximum validation accuracy, you need to use \texttt{ModelCheckpoint()} with following configurations:
+                \begin{itemize}
+                    \item Set \texttt{monitor} to \texttt{val\_acc} to monitor validation accuracy of the model in each epoch.
+                    \item Set \texttt{mode} to \texttt{max} to save a model which has the maximum validation accuracy.
+                    \item Set \texttt{save\_top\_k} to \texttt{1} to save only the best model.
+                    \item \texttt{filename} is the model's filename format.
+                    \item Set \texttt{verbose} to \texttt{True} to display the message when saving a model.
+                \end{itemize}
+
+                \begin{codeblock}{Model Checkpoint}
+                    checkpoint_callback = ModelCheckpoint(
+                        monitor="val_acc",
+                        mode="max",
+                        save_top_k=1,
+                        filename="efficientnetv2-best-{epoch:02d}-{val_acc:.4f}",
+                        verbose=True,
+                    )
+                \end{codeblock}
+
+            \subsection{Model Training}
+                PyTorch Lightning framework has \texttt{Trainer} object which handles the training loop for you by following the defined method in \texttt{EfficientNetV2} class.
+                \begin{itemize}
+                    \item \texttt{max\_epoch} is the maximum epochs of the model.
+                    \item \texttt{callbacks} is the model checkpoint object.
+                \end{itemize}
+
+                After initialize the \texttt{Trainer} object, use \texttt{fit()} command to start training a model.
+                \begin{itemize}
+                    \item \texttt{model} is the initialized model.
+                    \item \texttt{train\_dataloader} is the \texttt{DataLoader} for training dataset.
+                    \item \texttt{val\_dataloader} is the \texttt{DataLoader} for validation dataset.
+                \end{itemize}
+
+                \begin{codeblock}{Model Training}
+                    logger = WandbLogger(
+                        save_dir=".", name="lightning_logs", version=None
+                    )
+                    trainer = pl.Trainer(logger=logger, max_epochs=5, callbacks=[checkpoint_callback])
+                    trainer.fit(net, trainloader, valloader)
+                \end{codeblock}
+
+    \pagebreak
+
+            \subsection{Training Metrics}
+                During model training process, the loss and accuracy can be plotted as follows:
+                \begin{figure}[h]
+                    \centering
+                    \includegraphics[width=0.6\textwidth]{image_19}
+                    \caption{Training Metrics}
+                \end{figure}
+
+    \pagebreak
+
+        \section{Model Evaluation}
+            After done with training and validation the model, we will process with evaluating the model using the test dataset and has the following result:
+
+            Confusion matrix from comparing the predictions with ground truth.
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.75\textwidth]{image_20}
+                \caption{Confusion Matrix}
+            \end{figure}
+
+            Precision, recall and F1 score metrics result separated by class.
+            \begin{table}[h]
+                \centering
+                \begin{tabular}{|c|c|c|c|}
+                    \hline
+                    Class & Precision & Recall & F1 Score \\
+                    \hline
+                    butterfly & 0.8529 & 0.9667 & 0.9062 \\
+                    cat & 0.9286 & 0.8667 & 0.8966 \\
+                    chicken & 0.9333 & 0.9667 & 0.9180 \\
+                    cow & 0.7941 & 0.9000 & 0.8438 \\
+                    dog & 0.8125 & 0.8667 & 0.8387 \\
+                    elephant & 0.9630 & 0.8667 & 0.9123 \\
+                    horse & 0.9032 & 0.9333 & 0.9180 \\
+                    sheep & 0.9583 & 0.7667 & 0.8519 \\
+                    spider & 0.9000 & 0.9000 & 0.9000 \\
+                    squirrel & 0.9655 & 0.9333 & 0.9492 \\
+                    \hline
+                \end{tabular}
+                \caption{Per-class Evaluation Result}
+            \end{table}
+
+    \pagebreak
+
+            Overall precision, recall and F1 score metrics result.
+            \begin{table}[h]
+                \centering
+                \begin{tabular}{|c|c|}
+                    \hline
+                    Metrics & Value \\
+                    \hline
+                    Accuracy & 0.8933 \\
+                    Macro F1-score & 0.8935 \\
+                    Weighted F1-score & 0.8935 \\
+                    \hline
+                \end{tabular}
+                \caption{Overall Evaluation Result}
+            \end{table}
+
+            Finally, display a row of 5 images. Above each one, display the model confidence about the prediction.
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=\textwidth]{image_21}
+                \caption{Model Confidence}
+            \end{figure}
+
+    \pagebreak
+
+    \part{LangChain API}
+        This notebook shows the \textbf{LangChain} capabilities which allowing you to switch between different AI providers.
+
+        In this notebook demostrates the usage of AI from 4 providers as follows:
+        \begin{enumerate}
+            \item \textbf{OpenAI}: Use \texttt{gpt-5-mini} model from \texttt{langchain-openai} library.
+            \item \textbf{Google Gemini}: Use \texttt{gemini-2.5 flash} model from \texttt{langchain\_google\_genai} library.
+            \item \textbf{Groq}: Use \texttt{llama-3.1-8b-instant} model from \texttt{langchain-groq} library.
+            \item \textbf{NVIDIA}: Use a model from \texttt{langchain\_nvidia\_ai\_endpoints} library.
+        \end{enumerate}
+
+        \noindent To communicate with the model, we need an API key of the model which can be found at:
+        \begin{enumerate}
+            \item \textbf{OpenAI}: \url{https://platform.openai.com/account/api-keys}
+            \item \textbf{Google Gemini}: \url{https://aistudio.google.com/app/apikey}
+            \item \textbf{Groq}: \url{https://console.groq.com/keys}
+            \item \textbf{NVIDIA}: \url{https://build.nvidia.com/settings/api-keys}
+        \end{enumerate}
+\end{document}
