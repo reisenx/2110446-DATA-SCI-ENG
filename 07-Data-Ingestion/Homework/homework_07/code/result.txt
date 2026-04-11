@@ -1,0 +1,12 @@
+TRANSACTION
+- txid:   TX02618
+- payer:  A79924
+- payee:  A59221
+- amount: 1140
+VERIFICATION SUCCESS
+- timestamp: 1775015394
+- vid:       V970892
+- txid:      TX02618
+- checksum:  d15ef9616b704ffc17f6c3ea8f8e6f89
+- code:      200
+- message:   Confirm
