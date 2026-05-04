@@ -10,6 +10,9 @@
 *test.cpp
 *.exe
 
+# Secrets
+*.streamlit
+
 # Python Library Cache
 *__pycache__
 *.ruff_cache
