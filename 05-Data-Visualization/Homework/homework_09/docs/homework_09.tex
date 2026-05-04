@@ -1,0 +1,229 @@
+% DOCUMENT CLASS SETUP
+\documentclass[12pt, a4paper]{article}
+
+% DOCUMENT PACKAGES
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{titling}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{csquotes}
+\usepackage{tocloft}
+
+% FONT AND ENCODING SETUP
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\usepackage[Thai]{ucharclasses}
+\setdefaultlanguage{english}
+\setotherlanguage{thai}
+\setTransitionsFor{Thai}{\thaifont}{\normalfont}
+\newfontfamily{\thaifont}{THSarabun.ttf}[
+    Path=./,
+    BoldFont=THSarabunBold.ttf,
+    ItalicFont=THSarabunItalic.ttf,
+    BoldItalicFont=THSarabunBoldItalic.ttf,
+    Scale=1.23
+]
+\XeTeXlinebreaklocale "th"
+\XeTeXlinebreakskip = 0pt plus 1pt
+
+% PROFESSIONAL CODE BLOCK
+\usepackage{tcolorbox}
+\tcbuselibrary{minted, skins, breakable}
+
+% DEFINE GITHUB DARK THEME COLORS %
+\definecolor{ghback}{HTML}{0d1117}    % Dark background
+\definecolor{ghtext}{HTML}{c9d1d9}    % Light gray text
+\definecolor{ghborder}{HTML}{30363d}  % GitHub Border color
+
+% CODE BLOCK CONFIGURATION (MINTED) %
+\renewcommand{\theFancyVerbLine}{\textcolor{white!60!gray}{\scriptsize\arabic{FancyVerbLine}}}
+\newtcblisting{codeblock}[2][]{
+    enhanced,
+    breakable,
+    colback=ghback,
+    colframe=ghborder,
+    coltitle=ghtext,
+    colupper=ghtext,
+    fonttitle=\bfseries\small,
+    arc=3mm,
+    boxrule=0.5mm,
+    % PADDING SETTINGS
+    left=25pt,
+    right=10pt,
+    top=5pt,
+    bottom=5pt,
+    % MINTED SETTINGS
+    listing engine=minted,
+    listing only,
+    minted language=python,
+    minted options={
+        linenos,
+        numbersep=5pt,
+        fontsize=\footnotesize,
+        breaklines=true,
+        breakanywhere=true,
+        autogobble,
+        style=monokai,
+    },
+    title={#2},
+    #1
+}
+
+% DOCUMENT TITLE SETUP %
+\title {
+	\textbf{2110446 DATA SCIENCE AND DATA ENGINEERING} \\
+    \vspace{1em}
+	\Large{\textbf{Homework 9: Spatial Anaysis}} \\
+    \vspace{0.5em}
+    \large{Computer Engineering, Chulalongkorn University}
+}
+\author{Worralop Srichainont}
+\date{\today}
+\setlength{\droptitle}{15em}
+
+% DISABLE PAGE NUMBER IN TABLE OF CONTENTS
+\tocloftpagestyle{empty}
+
+% DOCUMENT CONTENTS
+\begin{document}
+
+    \maketitle
+    \thispagestyle{empty}
+    \clearpage
+
+    \tableofcontents
+    \thispagestyle{empty}
+    \clearpage
+
+    \pagenumbering{arabic}
+
+    \section{Source Code}
+
+        The modified \texttt{streamlit\_airbnb.py} can be accessed via this link
+        \texttt{\url{https://drive.google.com/file/d/1VbKk_hfcBod0N9phr95emXl3ewMmOHaf/view?usp=sharing}}
+        or an attached file in the MyCourseVille submission.
+
+        \vspace{1em}
+
+        Note that the Mapbox is now requires the API key to be able to access the map visualization.
+        Make sure to create a \texttt{/.streamlit/secrets.toml} file
+        to make the page able to show the map beneath the scatter or heatmap plot.
+
+        \begin{codeblock}{API Key Configuration}
+            MAP_BOX_API_KEY = "[INSERT YOUR API TOKEN HERE]"
+        \end{codeblock}
+
+        You can create your own API token
+        by create a free account at the website \texttt{\url{https://www.mapbox.com}}
+
+        \vspace{1em}
+
+        To utilize the API key, please insert the \texttt{api\_keys} parameter on the PyDeck function.
+        If you don't configure the API keys and passing the API key to the PyDeck parameter,
+        the map layer won't appear on the screen.
+
+        \begin{codeblock}{Utilize the API Keys}
+            st.pydeck_chart(
+                pdk.Deck(
+                    api_keys={"mapbox": st.secrets.get("MAP_BOX_API_KEY")},
+                    layers=[heatmap_layer],
+                    initial_view_state=pdk.ViewState(
+                        latitude=filtered_data["latitude"].mean(),
+                        longitude=filtered_data["longitude"].mean(),
+                        zoom=11,
+                        pitch=0,
+                    ),
+                    map_style=MAP_STYLES[map_style],
+                ),
+                height=600,
+            )
+        \end{codeblock}
+
+    \pagebreak
+
+    \section{Map Visualization}
+
+        In the Streamlit page, there are total 4 map visualizations which are.
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=\textwidth]{image_01}
+            \caption{Accommodation Hotspot Clusters}
+
+            \vspace{1cm}
+
+            \includegraphics[width=\textwidth]{image_02}
+            \caption{Accommodation Hotspot Heatmap}
+        \end{figure}
+
+    \pagebreak
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics[width=\textwidth]{image_03}
+            \caption{Accommodation Hotspot Hexagon Heatmap}
+
+            \vspace{1cm}
+
+            \includegraphics[width=\textwidth]{image_04}
+            \caption{Kernel Density Estimation (KDE) Analysis}
+        \end{figure}
+
+    \pagebreak
+
+    \section{Answers}
+        Consider only the accommodation which price is not exceed 1,000 baht. Answer the following questions
+
+        \subsection{Problem I}
+            According to the DBSCAN clustering by setting parameters \texttt{eps} to 0.001 (approximately 111 meters)
+            and \texttt{min\_samples} to 3. Which district has the biggest cluster?
+
+            \vspace{1em}
+
+            \noindent First, set the parameters to this at the sidebar of the Streamlit page.
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.3\textwidth]{image_05}
+                \caption{Parameters Configuration}
+            \end{figure}
+
+            \noindent Then, go to the cluster statistics section and look at the first one.
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=\textwidth]{image_06}
+                \caption{Cluster Information}
+            \end{figure}
+
+            \noindent \underline{\textbf{Ans.}} Khlong Toei district and Vadhana district has the biggest cluster.
+
+    \pagebreak
+
+        \subsection{Problem II}
+            According to the KDE analysis by setting parameters \texttt{bandwidth} to 0.005 (approximately 555 meters)
+            as default. What is the accommodation name at the highest density point?
+
+            \vspace{1em}
+
+            \noindent First, set the parameters to this at the sidebar of the Streamlit page.
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=0.3\textwidth]{image_07}
+                \caption{Parameters Configuration}
+            \end{figure}
+
+            \noindent Then, go to the KDE top 10 density listings right below the map section and look at the first one.
+            \begin{figure}[h]
+                \centering
+                \includegraphics[width=\textwidth]{image_08}
+                \caption{Top 10 Density Listings}
+            \end{figure}
+
+            \noindent \underline{\textbf{Ans.}} Sukhumvit Suite: Onnut BTS, Malls \& Street Food.
+
+\end{document}
